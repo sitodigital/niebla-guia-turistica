@@ -19,7 +19,7 @@
 <header class="hero"><div class="eyebrow">Guía turística · Huelva · Andalucía</div><h1>NIEBLA<br><span style="font-size:19px;font-style:italic;color:#e6d3a9">Entre murallas y leyendas</span></h1><p>Descubre la historia de una ciudad milenaria a tu propio ritmo.</p><div class="status"><i class="dot" id="gpsDot"></i><span id="gpsStatus">GPS sin activar · Puedes explorar el mapa</span></div></header>
 <nav class="tabs"><button class="tab active" data-view="explorar"><b>⌖</b>Mapa</button><button class="tab" data-view="rutas"><b>⌁</b>Rutas</button><button class="tab" data-view="guia"><b>♫</b>Guía</button><button class="tab" data-view="visita"><b>✧</b>Mi visita</button></nav>
 <main>
-<section class="view active" id="explorar"><div class="section-head"><h2>Explora Niebla</h2><span class="small" id="nearLabel">Puntos de interés</span></div><div id="map"></div><div class="map-actions"><button class="btn" id="locate">◎ Mi ubicación</button><button class="btn secondary" id="alerts">Avisos: activados</button></div><div class="notice">Permite el acceso a tu ubicación para ver tu posición y recibir avisos cuando te acerques a un lugar histórico. El GPS funciona mientras la página esté abierta.</div><div class="section-head"><h2>Lugares destacados</h2><span class="small">Selecciona para conocerlos</span></div><div class="cards" id="poiList"></div></section>
+<section class="view active" id="explorar"><div class="section-head"><h2>Explora Niebla</h2><span class="small" id="nearLabel">Puntos de interés</span></div><div id="map"></div><div class="map-actions"><button class="btn" id="locate">◎ Mi ubicación</button><button class="btn secondary" id="alerts">Avisos: activados</button></div><div class="notice">Permite el acceso a tu ubicación para ver tu posición y recibir avisos cuando te acerques a un lugar histórico. Los avisos funcionan mientras la guía está abierta. Por ahora sólo están activos en los monumentos con ubicación validada.</div><div class="section-head"><h2>Lugares destacados</h2><span class="small">Selecciona para conocerlos</span></div><div class="cards" id="poiList"></div></section>
 <section class="view" id="rutas"><div class="section-head"><h2>Rutas para descubrir</h2></div><article class="route"><span class="tag">RECORRIDO HISTÓRICO</span><h3>Tras las huellas de la ciudad medieval</h3><p>Castillo, murallas, puertas históricas y corazón monumental. Recorrido a pie por el casco histórico.</p><button class="btn" onclick="startRoute('medieval')">Ver recorrido</button></article><article class="route"><span class="tag">PATRIMONIO Y ORÍGENES</span><h3>De Ilipla a Niebla</h3><p>Un paseo por los vestigios romanos, la arquitectura religiosa y el entorno del río Tinto.</p><button class="btn" onclick="startRoute('origenes')">Ver recorrido</button></article><article class="route"><span class="tag">EXPLORACIÓN LIBRE</span><h3>A tu aire</h3><p>Consulta todos los puntos en el mapa y decide qué lugares visitar y en qué orden.</p><button class="btn secondary" onclick="showView('explorar')">Abrir mapa</button></article><div class="notice">Los recorridos y sus tiempos se concretarán al validar el trazado peatonal y los accesos de cada monumento.</div></section>
 <section class="view" id="guia"><div class="section-head"><h2>Tu guía virtual</h2></div><div class="guidebox"><div class="eyebrow" style="color:#6c806f">HISTORIAS DE NIEBLA</div><h2 id="guideTitle">Bienvenido a Niebla</h2><p id="guideText">Soy tu guía virtual. Selecciona un monumento en el mapa o en la lista para descubrir su historia. Puedes leer la explicación o escucharla en voz alta.</p><div class="guide-actions"><button class="btn" id="speak">▶ Escuchar</button><button class="btn secondary" id="stopSpeak">■ Detener</button></div></div><div class="notice">La narración utiliza la voz disponible en tu dispositivo. En una siguiente fase podremos incorporar locuciones profesionales grabadas.</div></section>
 <section class="view" id="visita"><div class="section-head"><h2>Mi visita</h2></div><div class="guidebox"><div class="small">TU PROGRESO</div><h2 id="progressCount">0 de 6 lugares</h2><div class="progress"><span id="progressBar"></span></div><p id="progressText">¡Empieza a descubrir Niebla!</p><button class="btn secondary" id="resetProgress">Reiniciar visita</button></div><h3 style="color:var(--ink);margin-top:20px">Lugares descubiertos</h3><div class="cards" id="visitedList"></div></section>
@@ -56,7 +56,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19,
   attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'
 }).addTo(map);
-const markers={};let userMarker=null,watchId=null,alertsOn=true,activePlace=null,visited=JSON.parse(localStorage.getItem('nieblaVisited')||'[]'),lastAlert={};
+const markers={};let userMarker=null,watchId=null,alertsOn=true,activePlace=null,visited=JSON.parse(localStorage.getItem('nieblaVisited')||'[]');
+const gpsAlertedInZone=new Set(); // Evita repetir el aviso mientras el visitante permanezca cerca.
 places.forEach(p=>{const m=L.marker([p.lat,p.lng]).addTo(map).bindPopup(`<b>${p.name}</b><br>${p.short}<br><button onclick="openPlace('${p.id}')">Conocer historia</button>`);m.on('click',()=>selectPlace(p.id));markers[p.id]=m});
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='explorar')setTimeout(()=>map.invalidateSize(),100);if(id==='visita')renderProgress()}
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showView(t.dataset.view)));
@@ -77,24 +78,42 @@ function showGpsPrompt(p){
 function closeGpsPrompt(){document.getElementById('gpsModal').classList.remove('show');pendingGpsPlace=null;}
 document.getElementById('gpsDiscover').onclick=()=>{if(pendingGpsPlace){const id=pendingGpsPlace.id;closeGpsPrompt();openPlace(id);}};
 document.getElementById('gpsLater').onclick=()=>closeGpsPrompt();
-function startGPS(){watchId=navigator.geolocation.watchPosition(pos=>{
-  const {latitude,longitude,accuracy}=pos.coords;
-  if(userMarker)userMarker.setLatLng([latitude,longitude]);
-  else userMarker=L.circleMarker([latitude,longitude],{radius:9,color:'#fff',weight:3,fillColor:'#2879d0',fillOpacity:1}).addTo(map).bindPopup('Estás aquí');
-  document.getElementById('gpsStatus').textContent=`GPS activo · precisión ±${Math.round(accuracy)} m`;
-  if(alertsOn && accuracy<=80 && !pendingGpsPlace){
+function startGPS(){
+  if(watchId!==null)return;
+  watchId=navigator.geolocation.watchPosition(pos=>{
+    const {latitude,longitude,accuracy}=pos.coords;
+    if(userMarker)userMarker.setLatLng([latitude,longitude]);
+    else userMarker=L.circleMarker([latitude,longitude],{radius:9,color:'#fff',weight:3,fillColor:'#2879d0',fillOpacity:1}).addTo(map).bindPopup('Estás aquí');
+    document.getElementById('gpsStatus').textContent=`GPS activo · precisión ±${Math.round(accuracy)} m`;
+
+    // Los avisos sólo se activan en monumentos con coordenadas validadas.
+    // Se entra en la zona a 65 m y se rearma al alejarse más de 110 m.
     for(const p of places){
       if(!p.exact || visited.includes(p.id))continue;
       const d=map.distance([latitude,longitude],[p.lat,p.lng]);
-      if(d<=65 && (!lastAlert[p.id] || Date.now()-lastAlert[p.id]>300000)){
-        lastAlert[p.id]=Date.now();
-        showGpsPrompt(p);
-        break;
+      if(d>110)gpsAlertedInZone.delete(p.id);
+    }
+
+    if(alertsOn && accuracy<=80 && !pendingGpsPlace){
+      for(const p of places){
+        if(!p.exact || visited.includes(p.id) || gpsAlertedInZone.has(p.id))continue;
+        const d=map.distance([latitude,longitude],[p.lat,p.lng]);
+        if(d<=65){
+          gpsAlertedInZone.add(p.id);
+          showGpsPrompt(p);
+          break;
+        }
       }
     }
-  }
-},()=>{document.getElementById('gpsStatus').textContent='Se perdió la señal GPS'},{enableHighAccuracy:true,maximumAge:5000,timeout:20000})}
-document.getElementById('alerts').onclick=async()=>{alertsOn=!alertsOn;document.getElementById('alerts').textContent='Avisos: '+(alertsOn?'activados':'desactivados');if(!alertsOn)closeGpsPrompt();if(alertsOn&&'Notification'in window&&Notification.permission==='default'){const permission=await Notification.requestPermission();if(permission!=='granted')document.getElementById('gpsStatus').textContent='Avisos del navegador no autorizados';}};
+  },()=>{
+    document.getElementById('gpsStatus').textContent='Se perdió la señal GPS';
+  },{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+}
+document.getElementById('alerts').onclick=()=>{
+  alertsOn=!alertsOn;
+  document.getElementById('alerts').textContent='Avisos: '+(alertsOn?'activados':'desactivados');
+  if(!alertsOn)closeGpsPrompt();
+};
 document.getElementById('speak').onclick=()=>{if(!activePlace){alert('Selecciona primero un monumento en el mapa o en la lista.');return}if(!('speechSynthesis'in window)){alert('Tu navegador no dispone de lectura de voz.');return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(activePlace.story);u.lang='es-ES';u.rate=.92;speechSynthesis.speak(u)};document.getElementById('stopSpeak').onclick=()=>speechSynthesis.cancel();
 function startRoute(type){const ids=type==='medieval'?['castillo','socorro','sanmartin','granada','buey']:['puente','castillo','sanmartin','granada'];const group=ids.map(id=>places.find(p=>p.id===id));showView('explorar');const bounds=L.latLngBounds(group.map(p=>[p.lat,p.lng]));map.fitBounds(bounds.pad(.2));group.forEach(p=>markers[p.id].openPopup());document.getElementById('nearLabel').textContent=type==='medieval'?'Ruta medieval':'Ruta de los orígenes';}
 document.getElementById('resetProgress').onclick=()=>{if(confirm('¿Quieres borrar los lugares descubiertos?')){visited=[];localStorage.removeItem('nieblaVisited');renderProgress()}};
