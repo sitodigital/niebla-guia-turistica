@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><meta name="theme-color" content="#173d35"><title>NIEBLA: Entre murallas y leyendas</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<style>
+:root{--ink:#173d35;--green:#24594c;--mint:#dcece2;--cream:#f7f4eb;--gold:#c49a50;--muted:#6c7770;--line:#e7e4da}*{box-sizing:border-box}body{margin:0;background:var(--cream);color:#20352f;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.app{max-width:760px;margin:auto;min-height:100vh;background:#fff;box-shadow:0 0 35px #122d2412}.hero{background:linear-gradient(135deg,#173d35,#2b6756);color:#fff;padding:24px 20px 18px}.eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#c9dfd1}.hero h1{font-family:Georgia,serif;font-weight:500;font-size:29px;line-height:1.08;margin:8px 0}.hero p{margin:0;color:#dcebe2;font-size:13px}.status{display:flex;gap:8px;align-items:center;margin-top:16px;font-size:12px;color:#e9f2ec}.dot{width:8px;height:8px;border-radius:50%;background:#d9b76d;display:inline-block}.tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:500}.tab{border:0;background:none;padding:12px 3px;color:#66736c;font-size:11px;font-weight:650}.tab b{display:block;font-size:19px;margin-bottom:3px}.tab.active{color:var(--green);box-shadow:inset 0 -3px var(--gold)}main{padding:16px}.view{display:none}.view.active{display:block}.section-head{display:flex;justify-content:space-between;align-items:center;margin:0 0 12px}.section-head h2{font:500 22px Georgia,serif;margin:0;color:var(--ink)}.small{font-size:12px;color:var(--muted)}#map{height:430px;border-radius:17px;overflow:hidden;border:1px solid var(--line);z-index:1}.map-actions{display:flex;gap:8px;margin:10px 0}.btn{border:0;border-radius:12px;padding:11px 14px;background:var(--green);color:#fff;font-weight:650;cursor:pointer}.btn.secondary{background:var(--mint);color:var(--ink)}.btn.outline{background:#fff;color:var(--green);border:1px solid #b9d1c2}.btn:disabled{opacity:.5}.notice{background:#f4f7f1;border:1px solid #e0eadf;padding:11px 12px;border-radius:12px;font-size:12px;color:#52635a;margin:10px 0}.cards{display:grid;gap:10px}.poi{border:1px solid var(--line);border-radius:15px;padding:13px;display:flex;gap:12px;align-items:center}.poi .symbol{width:45px;height:45px;border-radius:13px;background:var(--mint);display:grid;place-items:center;font-size:23px;flex:none}.poi h3{margin:0 0 3px;font-size:15px;color:var(--ink)}.poi p{margin:0;color:var(--muted);font-size:12px}.poi button{margin-left:auto;white-space:nowrap}.route{border:1px solid var(--line);border-radius:15px;padding:15px;margin-bottom:10px}.route h3{margin:0 0 5px;color:var(--ink)}.route p{margin:0 0 10px;color:var(--muted);font-size:13px}.tag{display:inline-block;border-radius:20px;background:#f2ead9;color:#725727;padding:4px 8px;font-size:10px;font-weight:700;margin-bottom:7px}.guidebox{background:linear-gradient(145deg,#f5f3e9,#e8f1e9);border-radius:18px;padding:17px}.guidebox h2{font:500 24px Georgia,serif;color:var(--ink);margin:6px 0}.guidebox p{white-space:pre-line}.guide-actions{display:flex;gap:8px;flex-wrap:wrap}.guide-actions button{flex:1;min-width:110px}.progress{height:7px;background:#e8e8df;border-radius:8px;overflow:hidden;margin:8px 0}.progress span{display:block;height:100%;width:0;background:var(--gold)}.footer{text-align:center;padding:18px;color:#829087;font-size:11px}.leaflet-popup-content-wrapper{border-radius:12px}.leaflet-popup-content{font:13px system-ui}.leaflet-control-attribution{font-size:9px!important}
+.gps-modal{position:fixed;inset:0;background:#10282099;z-index:2000;display:none;align-items:center;justify-content:center;padding:20px}
+.gps-modal.show{display:flex}
+.gps-dialog{width:min(100%,390px);background:#fff;border-radius:20px;padding:22px;box-shadow:0 18px 55px #0004;text-align:center}
+.gps-dialog .symbol{width:58px;height:58px;margin:0 auto 12px;border-radius:16px;background:var(--mint);display:grid;place-items:center;font-size:29px}
+.gps-dialog h2{font:500 24px Georgia,serif;color:var(--ink);margin:5px 0 8px}
+.gps-dialog p{color:var(--muted);font-size:14px;margin:0 0 17px}
+.gps-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+@media(max-width:480px){#map{height:55vh;min-height:340px}.hero h1{font-size:26px}.tab{font-size:10px}}
+</style></head>
+<body><div class="app">
+<header class="hero"><div class="eyebrow">Guía turística · Huelva · Andalucía</div><h1>NIEBLA<br><span style="font-size:19px;font-style:italic;color:#e6d3a9">Entre murallas y leyendas</span></h1><p>Descubre la historia de una ciudad milenaria a tu propio ritmo.</p><div class="status"><i class="dot" id="gpsDot"></i><span id="gpsStatus">GPS sin activar · Puedes explorar el mapa</span></div></header>
+<nav class="tabs"><button class="tab active" data-view="explorar"><b>⌖</b>Mapa</button><button class="tab" data-view="rutas"><b>⌁</b>Rutas</button><button class="tab" data-view="guia"><b>♫</b>Guía</button><button class="tab" data-view="visita"><b>✧</b>Mi visita</button></nav>
+<main>
+<section class="view active" id="explorar"><div class="section-head"><h2>Explora Niebla</h2><span class="small" id="nearLabel">Puntos de interés</span></div><div id="map"></div><div class="map-actions"><button class="btn" id="locate">◎ Mi ubicación</button><button class="btn secondary" id="alerts">Avisos: activados</button></div><div class="notice">Permite el acceso a tu ubicación para ver tu posición y recibir avisos cuando te acerques a un lugar histórico. El GPS funciona mientras la página esté abierta.</div><div class="section-head"><h2>Lugares destacados</h2><span class="small">Selecciona para conocerlos</span></div><div class="cards" id="poiList"></div></section>
+<section class="view" id="rutas"><div class="section-head"><h2>Rutas para descubrir</h2></div><article class="route"><span class="tag">RECORRIDO HISTÓRICO</span><h3>Tras las huellas de la ciudad medieval</h3><p>Castillo, murallas, puertas históricas y corazón monumental. Recorrido a pie por el casco histórico.</p><button class="btn" onclick="startRoute('medieval')">Ver recorrido</button></article><article class="route"><span class="tag">PATRIMONIO Y ORÍGENES</span><h3>De Ilipla a Niebla</h3><p>Un paseo por los vestigios romanos, la arquitectura religiosa y el entorno del río Tinto.</p><button class="btn" onclick="startRoute('origenes')">Ver recorrido</button></article><article class="route"><span class="tag">EXPLORACIÓN LIBRE</span><h3>A tu aire</h3><p>Consulta todos los puntos en el mapa y decide qué lugares visitar y en qué orden.</p><button class="btn secondary" onclick="showView('explorar')">Abrir mapa</button></article><div class="notice">Los recorridos y sus tiempos se concretarán al validar el trazado peatonal y los accesos de cada monumento.</div></section>
+<section class="view" id="guia"><div class="section-head"><h2>Tu guía virtual</h2></div><div class="guidebox"><div class="eyebrow" style="color:#6c806f">HISTORIAS DE NIEBLA</div><h2 id="guideTitle">Bienvenido a Niebla</h2><p id="guideText">Soy tu guía virtual. Selecciona un monumento en el mapa o en la lista para descubrir su historia. Puedes leer la explicación o escucharla en voz alta.</p><div class="guide-actions"><button class="btn" id="speak">▶ Escuchar</button><button class="btn secondary" id="stopSpeak">■ Detener</button></div></div><div class="notice">La narración utiliza la voz disponible en tu dispositivo. En una siguiente fase podremos incorporar locuciones profesionales grabadas.</div></section>
+<section class="view" id="visita"><div class="section-head"><h2>Mi visita</h2></div><div class="guidebox"><div class="small">TU PROGRESO</div><h2 id="progressCount">0 de 6 lugares</h2><div class="progress"><span id="progressBar"></span></div><p id="progressText">¡Empieza a descubrir Niebla!</p><button class="btn secondary" id="resetProgress">Reiniciar visita</button></div><h3 style="color:var(--ink);margin-top:20px">Lugares descubiertos</h3><div class="cards" id="visitedList"></div></section>
+</main>
+<div class="gps-modal" id="gpsModal" role="dialog" aria-modal="true" aria-labelledby="gpsModalTitle">
+  <div class="gps-dialog">
+    <div class="symbol" id="gpsModalIcon">🏰</div>
+    <div class="eyebrow" style="color:#6c806f">ESTÁS CERCA DE UN LUGAR HISTÓRICO</div>
+    <h2 id="gpsModalTitle">Un lugar te espera</h2>
+    <p id="gpsModalText">¿Quieres descubrir su historia?</p>
+    <div class="gps-dialog-actions">
+      <button class="btn" id="gpsDiscover">Descubrir historia</button>
+      <button class="btn secondary" id="gpsLater">Ahora no</button>
+    </div>
+  </div>
+</div>
+<div class="footer">Proyecto turístico digital · NIEBLA: Entre murallas y leyendas</div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const places=[
+{id:'castillo',name:'Castillo de los Guzmanes',kind:'Castillo y alcázar',icon:'🏰',lat:37.3619438,lng:-6.6778814,exact:true,desc:'El Castillo de Niebla conserva elementos de distintas etapas históricas. Su origen se remonta a época romana; fue alcázar durante el periodo islámico y adquirió su configuración actual principalmente en el siglo XV.',short:'El gran alcázar de Niebla.',story:'Nos encontramos ante uno de los grandes símbolos de Niebla: el Castillo de los Guzmanes. Su historia reúne distintas épocas. El enclave tuvo antecedentes romanos, fue alcázar durante el periodo islámico y, tras la conquista cristiana, se transformó hasta adquirir buena parte de su configuración actual en el siglo XV. Sus muros guardan la memoria de quienes habitaron y defendieron esta ciudad.'},
+{id:'granada',name:'Iglesia de Santa María de la Granada',kind:'Templo histórico',icon:'⛪',lat:37.359604,lng:-6.678626,exact:true,desc:'Un edificio excepcional que reúne huellas de distintas culturas y etapas: elementos vinculados a la antigua mezquita y arquitectura cristiana gótico-mudéjar.',short:'Mezquita, memoria y templo cristiano.',story:'Esta iglesia es uno de los lugares más singulares de Niebla. Antes de ser templo cristiano fue la mezquita mayor de la población. En su arquitectura conviven huellas de distintas épocas y culturas: elementos islámicos, piezas de origen romano y una configuración cristiana de tradición gótico-mudéjar. Es un magnífico resumen de la larga historia de la ciudad.'},
+{id:'sanmartin',name:'Iglesia de San Martín',kind:'Patrimonio religioso',icon:'⛪',lat:37.36055,lng:-6.67905,exact:false,desc:'Antigua mezquita que después fue cedida como sinagoga y convertida en iglesia. Se conservan el ábside y la portada.',short:'Un templo con varias vidas históricas.',story:'La Iglesia de San Martín conserva una historia de transformaciones. El lugar estuvo relacionado con una antigua mezquita; tras la conquista cristiana habría sido cedido a la comunidad judía como sinagoga y posteriormente se convirtió en iglesia. Hoy permanecen elementos como el ábside gótico-mudéjar y la portada.'},
+{id:'socorro',name:'Puerta del Socorro',kind:'Puerta de la muralla',icon:'🚪',lat:37.36092,lng:-6.67935,exact:false,desc:'Una de las puertas históricas de la muralla. Su nombre está relacionado con una representación de la Virgen del Socorro que se conserva en el torreón.',short:'Una entrada cargada de historia.',story:'La Puerta del Socorro forma parte del sistema defensivo de Niebla. Su nombre se relaciona con una pintura mural de la Virgen del Socorro que se encuentra en el interior del torreón. La tradición cuenta que por este acceso hizo su entrada Alfonso X durante la conquista de la ciudad.'},
+{id:'buey',name:'Puerta del Buey',kind:'Puerta de la muralla',icon:'🚪',lat:37.35895,lng:-6.67765,exact:false,desc:'Una de las puertas más evocadoras de Niebla. La tradición cuenta la estratagema del último rey Aben-Mafot durante el asedio cristiano.',short:'La leyenda del buey cebado.',story:'Esta puerta es conocida por una de las leyendas más famosas de Niebla. Se cuenta que, durante el asedio de las tropas de Alfonso X, el último rey musulmán, Aben-Mafot, hizo salir por aquí un buey bien alimentado para hacer creer a los sitiadores que aún quedaban abundantes provisiones dentro de la ciudad. La historia forma parte de la memoria popular iliplense.'},
+{id:'puente',name:'Puente Romano',kind:'Ingeniería y paisaje',icon:'🌉',lat:37.3652,lng:-6.6784,exact:false,desc:'Situado sobre el río Tinto, conserva elementos de fábrica romana junto a reformas de épocas posteriores. Fue reformado tras la voladura de uno de sus arcos en 1936.',short:'Niebla y el río Tinto.',story:'A la entrada de Niebla encontramos el Puente Romano, uno de los grandes testimonios de la importancia histórica de este enclave. El puente actual se apoya en la cimentación del antiguo y conserva arcos y elementos de distintas épocas. Formó parte de una vía que conectaba importantes núcleos de la antigua Hispania.'}
+];
+if(!window.L){
+  document.getElementById('map').innerHTML='<div style="padding:24px;color:#173d35">No se pudo cargar el componente del mapa. Comprueba tu conexión a Internet y vuelve a abrir la guía.</div>';
+  throw new Error('Leaflet no está disponible');
+}
+const map=L.map('map').setView([37.3605,-6.6785],16);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:19,
+  attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'
+}).addTo(map);
+const markers={};let userMarker=null,watchId=null,alertsOn=true,activePlace=null,visited=JSON.parse(localStorage.getItem('nieblaVisited')||'[]'),lastAlert={};
+places.forEach(p=>{const m=L.marker([p.lat,p.lng]).addTo(map).bindPopup(`<b>${p.name}</b><br>${p.short}<br><button onclick="openPlace('${p.id}')">Conocer historia</button>`);m.on('click',()=>selectPlace(p.id));markers[p.id]=m});
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===id));if(id==='explorar')setTimeout(()=>map.invalidateSize(),100);if(id==='visita')renderProgress()}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>showView(t.dataset.view)));
+function renderPlaces(){document.getElementById('poiList').innerHTML=places.map(p=>`<article class="poi"><div class="symbol">${p.icon}</div><div><h3>${p.name}</h3><p>${p.kind}${p.exact?'':' · ubicación por validar'}</p></div><button class="btn outline" onclick="openPlace('${p.id}')">Ver</button></article>`).join('');renderProgress()}
+function selectPlace(id){const p=places.find(x=>x.id===id);if(!p)return;activePlace=p;document.getElementById('guideTitle').textContent=p.name;document.getElementById('guideText').textContent=p.story;document.getElementById('nearLabel').textContent=p.name;}
+function openPlace(id){selectPlace(id);visited=[...new Set([...visited,id])];localStorage.setItem('nieblaVisited',JSON.stringify(visited));showView('guia');renderProgress();}
+function renderProgress(){const n=visited.length;document.getElementById('progressCount').textContent=`${n} de ${places.length} lugares`;document.getElementById('progressBar').style.width=(n/places.length*100)+'%';document.getElementById('progressText').textContent=n===places.length?'¡Has descubierto todos los lugares de esta primera versión!':'Sigue explorando para descubrir más rincones de Niebla.';document.getElementById('visitedList').innerHTML=visited.length?places.filter(p=>visited.includes(p.id)).map(p=>`<article class="poi"><div class="symbol">${p.icon}</div><div><h3>${p.name}</h3><p>Descubierto</p></div></article>`).join(''):'<p class="small">Todavía no has descubierto ningún lugar.</p>'}
+document.getElementById('locate').onclick=()=>{if(!navigator.geolocation){alert('Este navegador no permite geolocalización.');return}document.getElementById('gpsStatus').textContent='Solicitando ubicación…';navigator.geolocation.getCurrentPosition(pos=>{const {latitude,longitude,accuracy}=pos.coords;map.setView([latitude,longitude],18);if(userMarker)userMarker.setLatLng([latitude,longitude]);else userMarker=L.circleMarker([latitude,longitude],{radius:9,color:'#fff',weight:3,fillColor:'#2879d0',fillOpacity:1}).addTo(map).bindPopup('Estás aquí');document.getElementById('gpsStatus').textContent=`Ubicación activa · precisión ±${Math.round(accuracy)} m`;document.getElementById('gpsDot').style.background='#7bd49b';if(watchId===null)startGPS()},err=>{document.getElementById('gpsStatus').textContent='No se pudo obtener la ubicación';alert('Activa los permisos de ubicación del navegador y comprueba que la página se abre mediante HTTPS o localhost.')},{enableHighAccuracy:true,timeout:15000,maximumAge:5000})};
+let pendingGpsPlace=null;
+function showGpsPrompt(p){
+  if(document.getElementById('gpsModal').classList.contains('show'))return;
+  pendingGpsPlace=p;
+  document.getElementById('gpsModalIcon').textContent=p.icon;
+  document.getElementById('gpsModalTitle').textContent=p.name;
+  document.getElementById('gpsModalText').textContent='Estás cerca de este lugar. ¿Quieres descubrir su historia ahora?';
+  document.getElementById('gpsModal').classList.add('show');
+}
+function closeGpsPrompt(){document.getElementById('gpsModal').classList.remove('show');pendingGpsPlace=null;}
+document.getElementById('gpsDiscover').onclick=()=>{if(pendingGpsPlace){const id=pendingGpsPlace.id;closeGpsPrompt();openPlace(id);}};
+document.getElementById('gpsLater').onclick=()=>closeGpsPrompt();
+function startGPS(){watchId=navigator.geolocation.watchPosition(pos=>{
+  const {latitude,longitude,accuracy}=pos.coords;
+  if(userMarker)userMarker.setLatLng([latitude,longitude]);
+  else userMarker=L.circleMarker([latitude,longitude],{radius:9,color:'#fff',weight:3,fillColor:'#2879d0',fillOpacity:1}).addTo(map).bindPopup('Estás aquí');
+  document.getElementById('gpsStatus').textContent=`GPS activo · precisión ±${Math.round(accuracy)} m`;
+  if(alertsOn && accuracy<=80 && !pendingGpsPlace){
+    for(const p of places){
+      if(!p.exact || visited.includes(p.id))continue;
+      const d=map.distance([latitude,longitude],[p.lat,p.lng]);
+      if(d<=65 && (!lastAlert[p.id] || Date.now()-lastAlert[p.id]>300000)){
+        lastAlert[p.id]=Date.now();
+        showGpsPrompt(p);
+        break;
+      }
+    }
+  }
+},()=>{document.getElementById('gpsStatus').textContent='Se perdió la señal GPS'},{enableHighAccuracy:true,maximumAge:5000,timeout:20000})}
+document.getElementById('alerts').onclick=async()=>{alertsOn=!alertsOn;document.getElementById('alerts').textContent='Avisos: '+(alertsOn?'activados':'desactivados');if(!alertsOn)closeGpsPrompt();if(alertsOn&&'Notification'in window&&Notification.permission==='default'){const permission=await Notification.requestPermission();if(permission!=='granted')document.getElementById('gpsStatus').textContent='Avisos del navegador no autorizados';}};
+document.getElementById('speak').onclick=()=>{if(!activePlace){alert('Selecciona primero un monumento en el mapa o en la lista.');return}if(!('speechSynthesis'in window)){alert('Tu navegador no dispone de lectura de voz.');return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(activePlace.story);u.lang='es-ES';u.rate=.92;speechSynthesis.speak(u)};document.getElementById('stopSpeak').onclick=()=>speechSynthesis.cancel();
+function startRoute(type){const ids=type==='medieval'?['castillo','socorro','sanmartin','granada','buey']:['puente','castillo','sanmartin','granada'];const group=ids.map(id=>places.find(p=>p.id===id));showView('explorar');const bounds=L.latLngBounds(group.map(p=>[p.lat,p.lng]));map.fitBounds(bounds.pad(.2));group.forEach(p=>markers[p.id].openPopup());document.getElementById('nearLabel').textContent=type==='medieval'?'Ruta medieval':'Ruta de los orígenes';}
+document.getElementById('resetProgress').onclick=()=>{if(confirm('¿Quieres borrar los lugares descubiertos?')){visited=[];localStorage.removeItem('nieblaVisited');renderProgress()}};
+renderPlaces();
+</script></body></html>
