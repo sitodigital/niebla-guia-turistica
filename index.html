@@ -14,7 +14,17 @@
 .gps-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 
 @media(max-width:480px){#map{height:55vh;min-height:340px}.hero h1{font-size:26px}.tab{font-size:10px}}
-</style></head>
+</style>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="./icons/favicon-64.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NIEBLA">
+<meta name="application-name" content="NIEBLA">
+
+</head>
 <body><div class="app">
 <header class="hero"><div class="eyebrow">Guía turística · Huelva · Andalucía</div><h1>NIEBLA<br><span style="font-size:19px;font-style:italic;color:#e6d3a9">Entre murallas y leyendas</span></h1><p>Descubre la historia de una ciudad milenaria a tu propio ritmo.</p><div class="status"><i class="dot" id="gpsDot"></i><span id="gpsStatus">GPS sin activar · Puedes explorar el mapa</span></div></header>
 <nav class="tabs"><button class="tab active" data-view="explorar"><b>⌖</b>Mapa</button><button class="tab" data-view="rutas"><b>⌁</b>Rutas</button><button class="tab" data-view="guia"><b>♫</b>Guía</button><button class="tab" data-view="visita"><b>✧</b>Mi visita</button></nav>
@@ -109,4 +119,15 @@ document.getElementById('speak').onclick=()=>{if(!activePlace){alert('Selecciona
 function startRoute(type){const ids=type==='medieval'?['castillo','socorro','sanmartin','granada','buey']:['puente','castillo','sanmartin','granada'];const group=ids.map(id=>places.find(p=>p.id===id));showView('explorar');const bounds=L.latLngBounds(group.map(p=>[p.lat,p.lng]));map.fitBounds(bounds.pad(.2));group.forEach(p=>markers[p.id].openPopup());document.getElementById('nearLabel').textContent=type==='medieval'?'Ruta medieval':'Ruta de los orígenes';}
 document.getElementById('resetProgress').onclick=()=>{if(confirm('¿Quieres borrar los lugares descubiertos?')){visited=[];localStorage.removeItem('nieblaVisited');renderProgress()}};
 renderPlaces();
-</script></body></html>
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(error => {
+      console.warn('No se pudo registrar el modo instalable:', error);
+    });
+  });
+}
+</script>
+
+</body></html>
