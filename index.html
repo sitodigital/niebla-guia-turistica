@@ -13,6 +13,19 @@
 .gps-dialog p{color:var(--muted);font-size:14px;margin:0 0 17px}
 .gps-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 
+
+.install-modal{position:fixed;inset:0;background:#102820b8;z-index:3000;display:none;align-items:center;justify-content:center;padding:20px}
+.install-modal.show{display:flex}
+.install-dialog{width:min(100%,410px);background:#fff;border-radius:22px;padding:24px 22px;box-shadow:0 18px 55px #0005;text-align:center}
+.install-dialog .install-symbol{width:66px;height:66px;margin:0 auto 13px;border-radius:18px;background:var(--ink);border:2px solid var(--gold);display:grid;place-items:center;color:#e6d3a9;font: bold 27px Georgia,serif}
+.install-dialog h2{font:500 25px Georgia,serif;color:var(--ink);margin:5px 0 9px}
+.install-dialog p{color:var(--muted);font-size:14px;margin:0 0 16px}
+.install-actions{display:grid;gap:9px}
+.install-help{display:none;text-align:left;background:#f4f7f1;border:1px solid #e0eadf;border-radius:12px;padding:12px;margin-top:13px;color:#40564a;font-size:13px}
+.install-help.show{display:block}
+.install-help ol{padding-left:20px;margin:7px 0 0}
+.install-actions .btn{width:100%}
+
 @media(max-width:480px){#map{height:55vh;min-height:340px}.hero h1{font-size:26px}.tab{font-size:10px}}
 </style>
 <link rel="manifest" href="./manifest.webmanifest">
@@ -34,6 +47,21 @@
 <section class="view" id="guia"><div class="section-head"><h2>Tu guía virtual</h2></div><div class="guidebox"><div class="eyebrow" style="color:#6c806f">HISTORIAS DE NIEBLA</div><h2 id="guideTitle">Bienvenido a Niebla</h2><p id="guideText">Soy tu guía virtual. Selecciona un monumento en el mapa o en la lista para descubrir su historia. Puedes leer la explicación o escucharla en voz alta.</p><div class="guide-actions"><button class="btn" id="speak">▶ Escuchar</button><button class="btn secondary" id="stopSpeak">■ Detener</button></div></div><div class="notice">La narración utiliza la voz disponible en tu dispositivo. En una siguiente fase podremos incorporar locuciones profesionales grabadas.</div></section>
 <section class="view" id="visita"><div class="section-head"><h2>Mi visita</h2></div><div class="guidebox"><div class="small">TU PROGRESO</div><h2 id="progressCount">0 de 16 lugares</h2><div class="progress"><span id="progressBar"></span></div><p id="progressText">¡Empieza a descubrir Niebla!</p><button class="btn secondary" id="resetProgress">Reiniciar visita</button></div><h3 style="color:var(--ink);margin-top:20px">Lugares descubiertos</h3><div class="cards" id="visitedList"></div></section>
 </main>
+
+<div class="install-modal" id="installModal" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+  <div class="install-dialog">
+    <div class="install-symbol">N</div>
+    <div class="eyebrow" style="color:#6c806f">TU GUÍA DE NIEBLA</div>
+    <h2 id="installTitle">Lleva Niebla contigo</h2>
+    <p id="installMessage">Instala NIEBLA: Entre murallas y leyendas para acceder cómodamente desde tu pantalla de inicio.</p>
+    <div class="install-actions">
+      <button class="btn" id="installAction">Instalar aplicación</button>
+      <button class="btn secondary" id="installLater">Ahora no</button>
+    </div>
+    <div class="install-help" id="installHelp" aria-live="polite"></div>
+  </div>
+</div>
+
 <div class="gps-modal" id="gpsModal" role="dialog" aria-modal="true" aria-labelledby="gpsModalTitle">
   <div class="gps-dialog">
     <div class="symbol" id="gpsModalIcon">🏰</div>
@@ -128,6 +156,84 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+</script>
+
+
+<script>
+(() => {
+  const modal = document.getElementById('installModal');
+  if (!modal) return;
+
+  const isStandalone = () =>
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.navigator.standalone === true;
+
+  const isAppleMobile = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  let deferredInstallPrompt = null;
+  const action = document.getElementById('installAction');
+  const later = document.getElementById('installLater');
+  const help = document.getElementById('installHelp');
+  const message = document.getElementById('installMessage');
+
+  function closeInstallModal(dismissed) {
+    modal.classList.remove('show');
+    if (dismissed) {
+      try { localStorage.setItem('nieblaInstallDismissed', '1'); } catch (_) {}
+    }
+  }
+
+  function showHelp(html) {
+    help.innerHTML = html;
+    help.classList.add('show');
+    action.textContent = 'Entendido';
+    action.onclick = () => closeInstallModal(true);
+  }
+
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+  });
+
+  window.addEventListener('appinstalled', () => {
+    try { localStorage.setItem('nieblaInstallDismissed', '1'); } catch (_) {}
+    closeInstallModal(false);
+  });
+
+  action.addEventListener('click', async () => {
+    if (action.textContent === 'Entendido') {
+      closeInstallModal(true);
+      return;
+    }
+
+    if (isAppleMobile) {
+      showHelp('<strong>Para instalarla en iPhone o iPad:</strong><ol><li>Abre este enlace en <strong>Safari</strong>.</li><li>Pulsa el botón <strong>Compartir</strong> (cuadrado con flecha).</li><li>Elige <strong>Añadir a pantalla de inicio</strong>.</li><li>Pulsa <strong>Añadir</strong>.</li></ol>');
+      return;
+    }
+
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice;
+      if (choice && choice.outcome === 'accepted') closeInstallModal(false);
+      deferredInstallPrompt = null;
+      return;
+    }
+
+    showHelp('<strong>Para instalarla:</strong><ol><li>Abre el menú del navegador (⋮ o ⋯).</li><li>Busca <strong>Instalar aplicación</strong> o <strong>Añadir a pantalla de inicio</strong>.</li><li>Confirma la instalación.</li></ol><span>Si no aparece esa opción, comprueba que estás usando un navegador compatible y que la página ha terminado de cargar.</span>');
+  });
+
+  later.addEventListener('click', () => closeInstallModal(true));
+
+  window.addEventListener('DOMContentLoaded', () => {
+    let dismissed = false;
+    try { dismissed = localStorage.getItem('nieblaInstallDismissed') === '1'; } catch (_) {}
+    if (!isStandalone() && !dismissed) {
+      modal.classList.add('show');
+    }
+  });
+})();
 </script>
 
 </body></html>
